@@ -31,7 +31,11 @@ def save_message(user_id, username, message_text):
     with open(DATA_FILE, "w") as f:
         json.dump(messages, f, indent=2)
 
-# Handle user messages
+
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Welcome to SAVVY SOCIETY! Send me your questions anytime."
+    )
 
 
 async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -54,8 +58,6 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         "Thanks for your message! 😊\nWe'll get back to you shortly.\nSAVVY SOCIETY – stay tuned at @savvy."
     )
 
-# Handle /reply command
-
 
 async def reply_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -64,16 +66,20 @@ async def reply_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         user_id = int(context.args[0])
         reply_text = ' '.join(context.args[1:])
+        if not reply_text:
+            raise ValueError("No reply message provided.")
         await context.bot.send_message(chat_id=user_id, text=f"💬 Admin:\n{reply_text}")
         await update.message.reply_text("✅ Message sent!")
     except (IndexError, ValueError):
         await update.message.reply_text("⚠️ Usage: /reply <user_id> <your message>")
 
-# Main app
+
 if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(MessageHandler(
-        filters.TEXT & ~filters.COMMAND, handle_user_message))
+
+    app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_user_message))
     app.add_handler(CommandHandler("reply", reply_command))
+
     print("🤖 Bot is running...")
     app.run_polling()
